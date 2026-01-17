@@ -7,12 +7,13 @@
 
 import SwiftUI
 
-/// Main Tab View - Modern floating tab bar
+/// Main Tab View - Adaptive for iPhone and iPad
 struct MainTabView: View {
     @ObservedObject var viewModel: ProjectViewModel
     @Binding var project: Project
 
     @State private var selectedTab = 0
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private let tabs: [(icon: String, label: String)] = [
         ("house.fill", "Home"),
@@ -22,36 +23,116 @@ struct MainTabView: View {
         ("folder.fill", "Project"),
     ]
 
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
+
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content
-            TabView(selection: $selectedTab) {
-                HomeTabView(project: $project, viewModel: viewModel, selectedTab: $selectedTab)
-                    .tag(0)
+        Group {
+            if isIPad {
+                // iPad: Use Sidebar Navigation
+                NavigationSplitView {
+                    iPadSidebar
+                } detail: {
+                    iPadDetailView
+                }
+            } else {
+                // iPhone: Use Floating Tab Bar
+                ZStack(alignment: .bottom) {
+                    TabView(selection: $selectedTab) {
+                        HomeTabView(
+                            project: $project, viewModel: viewModel, selectedTab: $selectedTab
+                        )
+                        .tag(0)
 
-                BoardTabView(project: $project, viewModel: viewModel)
-                    .tag(1)
+                        BoardTabView(project: $project, viewModel: viewModel)
+                            .tag(1)
 
-                BacklogTabView(project: $project, viewModel: viewModel)
-                    .tag(2)
+                        BacklogTabView(project: $project, viewModel: viewModel)
+                            .tag(2)
 
-                ReportsTabView(project: $project, viewModel: viewModel)
-                    .tag(3)
+                        ReportsTabView(project: $project, viewModel: viewModel)
+                            .tag(3)
 
-                ProjectTabView(project: $project, viewModel: viewModel)
-                    .tag(4)
+                        ProjectTabView(project: $project, viewModel: viewModel)
+                            .tag(4)
+                    }
+
+                    customTabBar
+                }
+                .onAppear {
+                    UITabBar.appearance().isHidden = true
+                }
             }
-
-            // Custom Floating Tab Bar
-            customTabBar
-        }
-        .onAppear {
-            // Hide default tab bar
-            UITabBar.appearance().isHidden = true
         }
     }
 
-    // MARK: - Custom Tab Bar
+    // MARK: - iPad Sidebar
+    private var iPadSidebar: some View {
+        List(
+            selection: Binding(
+                get: { selectedTab },
+                set: { newValue in
+                    if let value = newValue {
+                        selectedTab = value
+                    }
+                }
+            )
+        ) {
+            Section("Navigation") {
+                ForEach(0..<tabs.count, id: \.self) { index in
+                    Label(tabs[index].label, systemImage: tabs[index].icon)
+                        .tag(index)
+                }
+            }
+
+            Section("Project") {
+                HStack {
+                    Circle()
+                        .fill(Color.blue.gradient)
+                        .frame(width: 32, height: 32)
+                        .overlay(
+                            Text(String(project.name.prefix(1)))
+                                .font(.caption)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white)
+                        )
+
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(project.name)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Text("\(project.sprints.count) sprints")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .navigationTitle("Scrume")
+        .listStyle(.sidebar)
+    }
+
+    // MARK: - iPad Detail View
+    @ViewBuilder
+    private var iPadDetailView: some View {
+        switch selectedTab {
+        case 0:
+            HomeTabView(project: $project, viewModel: viewModel, selectedTab: $selectedTab)
+        case 1:
+            BoardTabView(project: $project, viewModel: viewModel)
+        case 2:
+            BacklogTabView(project: $project, viewModel: viewModel)
+        case 3:
+            ReportsTabView(project: $project, viewModel: viewModel)
+        case 4:
+            ProjectTabView(project: $project, viewModel: viewModel)
+        default:
+            HomeTabView(project: $project, viewModel: viewModel, selectedTab: $selectedTab)
+        }
+    }
+
+    // MARK: - Custom Tab Bar (iPhone)
     private var customTabBar: some View {
         HStack(spacing: 0) {
             ForEach(0..<tabs.count, id: \.self) { index in

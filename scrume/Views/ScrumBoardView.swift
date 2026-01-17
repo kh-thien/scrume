@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Scrum Board - iOS-optimized với Tab-based navigation
+/// Scrum Board - Adaptive for iPhone and iPad
 struct ScrumBoardView: View {
     @Binding var sprint: Sprint
     @Binding var project: Project
@@ -15,14 +15,31 @@ struct ScrumBoardView: View {
 
     @State private var showStoryDetail: UserStory?
     @State private var showAddStories = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
+
+    private var columnSpacing: CGFloat {
+        isIPad ? 16 : 8
+    }
+
+    private var horizontalPadding: CGFloat {
+        isIPad ? 20 : 8
+    }
+
+    private var bottomPadding: CGFloat {
+        isIPad ? 20 : 90
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             // MARK: - Progress Summary Bar
-            SprintProgressBar(sprint: sprint)
+            SprintProgressBar(sprint: sprint, isIPad: isIPad)
 
             // MARK: - Three Column Board
-            HStack(spacing: 8) {
+            HStack(spacing: columnSpacing) {
                 // Todo Column
                 BoardColumn(
                     status: .todo,
@@ -30,7 +47,8 @@ struct ScrumBoardView: View {
                     sprint: $sprint,
                     project: $project,
                     viewModel: viewModel,
-                    showStoryDetail: $showStoryDetail
+                    showStoryDetail: $showStoryDetail,
+                    isIPad: isIPad
                 )
 
                 // In Progress Column
@@ -40,7 +58,8 @@ struct ScrumBoardView: View {
                     sprint: $sprint,
                     project: $project,
                     viewModel: viewModel,
-                    showStoryDetail: $showStoryDetail
+                    showStoryDetail: $showStoryDetail,
+                    isIPad: isIPad
                 )
 
                 // Done Column
@@ -50,12 +69,13 @@ struct ScrumBoardView: View {
                     sprint: $sprint,
                     project: $project,
                     viewModel: viewModel,
-                    showStoryDetail: $showStoryDetail
+                    showStoryDetail: $showStoryDetail,
+                    isIPad: isIPad
                 )
             }
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            .padding(.bottom, 90)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.top, isIPad ? 12 : 8)
+            .padding(.bottom, bottomPadding)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Scrum Board")
@@ -63,15 +83,20 @@ struct ScrumBoardView: View {
         .toolbar {
             ToolbarItem(placement: .principal) {
                 Text(sprint.name)
-                    .font(.headline)
+                    .font(isIPad ? .title3 : .headline)
+                    .fontWeight(.semibold)
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
                     showAddStories = true
                 } label: {
-                    Label("Add from Backlog", systemImage: "arrow.right.doc.on.clipboard")
-                        .labelStyle(.iconOnly)
+                    if isIPad {
+                        Label("Add from Backlog", systemImage: "arrow.right.doc.on.clipboard")
+                    } else {
+                        Label("Add from Backlog", systemImage: "arrow.right.doc.on.clipboard")
+                            .labelStyle(.iconOnly)
+                    }
                 }
                 .accessibilityLabel("Add stories from backlog")
             }
@@ -107,66 +132,68 @@ struct BoardColumn: View {
     @Binding var project: Project
     @ObservedObject var viewModel: ProjectViewModel
     @Binding var showStoryDetail: UserStory?
+    var isIPad: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
             // Column Header
             HStack {
                 Image(systemName: status.icon)
-                    .font(.caption)
+                    .font(isIPad ? .subheadline : .caption)
                     .foregroundStyle(status.color)
-                
-                Text(status.shortName)
-                    .font(.caption)
+
+                Text(isIPad ? status.rawValue : status.shortName)
+                    .font(isIPad ? .subheadline : .caption)
                     .fontWeight(.semibold)
-                
+
                 Spacer()
-                
+
                 Text("\(stories.count)")
-                    .font(.caption2)
+                    .font(isIPad ? .caption : .caption2)
                     .fontWeight(.medium)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
+                    .padding(.horizontal, isIPad ? 10 : 6)
+                    .padding(.vertical, isIPad ? 4 : 2)
                     .background(Capsule().fill(status.color.opacity(0.2)))
                     .foregroundStyle(status.color)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 8)
+            .padding(.horizontal, isIPad ? 16 : 8)
+            .padding(.vertical, isIPad ? 12 : 8)
             .background(Color(.systemBackground))
-            .cornerRadius(8, corners: [.topLeft, .topRight])
+            .cornerRadius(isIPad ? 12 : 8, corners: [.topLeft, .topRight])
 
             // Stories List
             ScrollView {
                 if stories.isEmpty {
-                    VStack(spacing: 8) {
+                    VStack(spacing: isIPad ? 12 : 8) {
                         Image(systemName: status.emptyIcon)
-                            .font(.title2)
+                            .font(isIPad ? .largeTitle : .title2)
                             .foregroundStyle(status.color.opacity(0.4))
                         Text("No items")
-                            .font(.caption2)
+                            .font(isIPad ? .subheadline : .caption2)
                             .foregroundStyle(.secondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 30)
+                    .padding(.vertical, isIPad ? 60 : 30)
                 } else {
-                    LazyVStack(spacing: 8) {
+                    LazyVStack(spacing: isIPad ? 12 : 8) {
                         ForEach(stories) { story in
                             CompactStoryCard(
                                 story: story,
                                 status: status,
                                 project: project,
+                                isIPad: isIPad,
                                 onTap: { showStoryDetail = story },
                                 onMoveLeft: { moveStory(story, direction: .left) },
                                 onMoveRight: { moveStory(story, direction: .right) }
                             )
                         }
                     }
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, isIPad ? 8 : 4)
+                    .padding(.vertical, isIPad ? 12 : 8)
                 }
             }
             .background(Color(.systemGray6))
-            .cornerRadius(8, corners: [.bottomLeft, .bottomRight])
+            .cornerRadius(isIPad ? 12 : 8, corners: [.bottomLeft, .bottomRight])
         }
         .frame(maxWidth: .infinity)
     }
@@ -233,6 +260,7 @@ struct CompactStoryCard: View {
     let story: UserStory
     let status: StoryStatus
     let project: Project
+    var isIPad: Bool = false
     let onTap: () -> Void
     let onMoveLeft: () -> Void
     let onMoveRight: () -> Void
@@ -241,7 +269,9 @@ struct CompactStoryCard: View {
     @State private var showLeftAction = false
     @State private var showRightAction = false
 
-    private let swipeThreshold: CGFloat = 50
+    private var swipeThreshold: CGFloat {
+        isIPad ? 70 : 50
+    }
 
     var body: some View {
         ZStack {
@@ -249,40 +279,48 @@ struct CompactStoryCard: View {
             HStack {
                 if canMoveLeft {
                     Image(systemName: "arrow.left")
+                        .font(isIPad ? .title2 : .body)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(status == .done ? Color.blue : Color.gray))
+                        .background(
+                            RoundedRectangle(cornerRadius: isIPad ? 14 : 10).fill(
+                                status == .done ? Color.blue : Color.gray)
+                        )
                         .opacity(showLeftAction ? 1 : 0.6)
                 }
-                
+
                 if canMoveRight {
                     Image(systemName: "arrow.right")
+                        .font(isIPad ? .title2 : .body)
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(RoundedRectangle(cornerRadius: 10).fill(status == .todo ? Color.blue : Color.green))
+                        .background(
+                            RoundedRectangle(cornerRadius: isIPad ? 14 : 10).fill(
+                                status == .todo ? Color.blue : Color.green)
+                        )
                         .opacity(showRightAction ? 1 : 0.6)
                 }
             }
 
             // Card content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: isIPad ? 8 : 4) {
                 // Title
                 Text(story.title)
-                    .font(.caption)
+                    .font(isIPad ? .body : .caption)
                     .fontWeight(.medium)
-                    .lineLimit(2)
+                    .lineLimit(isIPad ? 3 : 2)
 
                 // Bottom row
                 HStack {
                     // Priority
                     Circle()
                         .fill(story.priority.color)
-                        .frame(width: 6, height: 6)
+                        .frame(width: isIPad ? 10 : 6, height: isIPad ? 10 : 6)
 
                     // Points
                     if story.storyPoints > 0 {
                         Text("\(story.storyPoints)pt")
-                            .font(.caption2)
+                            .font(isIPad ? .caption : .caption2)
                             .foregroundStyle(.secondary)
                     }
 
@@ -293,16 +331,16 @@ struct CompactStoryCard: View {
                         AssigneesAvatarStack(
                             assigneeIds: story.assigneeIds,
                             members: project.members,
-                            size: 18
+                            size: isIPad ? 26 : 18
                         )
                     }
                 }
             }
-            .padding(8)
+            .padding(isIPad ? 14 : 8)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color(.systemBackground))
-            .cornerRadius(10)
-            .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+            .cornerRadius(isIPad ? 14 : 10)
+            .shadow(color: .black.opacity(0.05), radius: isIPad ? 4 : 2, x: 0, y: isIPad ? 2 : 1)
             .offset(x: offset)
             .gesture(
                 DragGesture()
@@ -351,23 +389,24 @@ struct CompactStoryCard: View {
 
 struct SprintProgressBar: View {
     let sprint: Sprint
+    var isIPad: Bool = false
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: isIPad ? 12 : 8) {
             // Progress bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     // Background
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: isIPad ? 6 : 4)
                         .fill(Color(.systemGray5))
 
                     // Done (green)
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: isIPad ? 6 : 4)
                         .fill(Color.green)
                         .frame(width: geo.size.width * doneRatio)
 
                     // In Progress (blue) overlay on done
-                    RoundedRectangle(cornerRadius: 4)
+                    RoundedRectangle(cornerRadius: isIPad ? 6 : 4)
                         .fill(Color.blue)
                         .frame(width: geo.size.width * (doneRatio + inProgressRatio))
                         .mask(alignment: .leading) {
@@ -377,19 +416,24 @@ struct SprintProgressBar: View {
                         }
                 }
             }
-            .frame(height: 8)
+            .frame(height: isIPad ? 12 : 8)
 
             // Stats
             HStack {
-                StatLabel(value: sprint.todoStories.count, label: "To Do", color: .secondary)
+                StatLabel(
+                    value: sprint.todoStories.count, label: "To Do", color: .secondary,
+                    isIPad: isIPad)
                 Spacer()
-                StatLabel(value: sprint.inProgressStories.count, label: "In Progress", color: .blue)
+                StatLabel(
+                    value: sprint.inProgressStories.count, label: "In Progress", color: .blue,
+                    isIPad: isIPad)
                 Spacer()
-                StatLabel(value: sprint.doneStories.count, label: "Done", color: .green)
+                StatLabel(
+                    value: sprint.doneStories.count, label: "Done", color: .green, isIPad: isIPad)
                 Spacer()
 
                 // Points
-                HStack(spacing: 4) {
+                HStack(spacing: isIPad ? 6 : 4) {
                     Text("\(sprint.completedStoryPoints)")
                         .fontWeight(.bold)
                         .foregroundStyle(.green)
@@ -428,14 +472,15 @@ struct StatLabel: View {
     let value: Int
     let label: String
     let color: Color
+    var isIPad: Bool = false
 
     var body: some View {
-        VStack(spacing: 2) {
+        VStack(spacing: isIPad ? 4 : 2) {
             Text("\(value)")
-                .font(.headline)
+                .font(isIPad ? .title3 : .headline)
                 .foregroundStyle(color)
             Text(label)
-                .font(.caption2)
+                .font(isIPad ? .caption : .caption2)
                 .foregroundStyle(.secondary)
         }
     }
@@ -651,7 +696,7 @@ struct SwipeableStoryCard: View {
                         .onChanged { value in
                             let translation = value.translation.width
                             let verticalMovement = abs(value.translation.height)
-                            
+
                             // Only handle horizontal swipes (ignore vertical scrolling)
                             guard abs(translation) > verticalMovement else {
                                 return
@@ -977,7 +1022,9 @@ struct BoardStoryDetailView: View {
                 }
 
                 // Add more assignees
-                let availableMembers = project.members.filter { !currentStory.assigneeIds.contains($0.id) }
+                let availableMembers = project.members.filter {
+                    !currentStory.assigneeIds.contains($0.id)
+                }
                 if !availableMembers.isEmpty {
                     Menu {
                         ForEach(availableMembers) { member in

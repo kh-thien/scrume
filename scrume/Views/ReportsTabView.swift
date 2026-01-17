@@ -8,17 +8,22 @@
 import Charts
 import SwiftUI
 
-/// Reports Tab - Thống kê và biểu đồ
+/// Reports Tab - Statistics and Charts
 struct ReportsTabView: View {
     @Binding var project: Project
     @ObservedObject var viewModel: ProjectViewModel
 
     @State private var selectedReportType: ReportType = .burndown
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: isIPad ? 24 : 20) {
                     // Report Type Picker
                     Picker("Report Type", selection: $selectedReportType) {
                         ForEach(ReportType.allCases) { type in
@@ -26,7 +31,7 @@ struct ReportsTabView: View {
                         }
                     }
                     .pickerStyle(.segmented)
-                    .padding(.horizontal)
+                    .padding(.horizontal, isIPad ? 24 : 16)
 
                     // Report Content
                     switch selectedReportType {
@@ -39,7 +44,7 @@ struct ReportsTabView: View {
                     }
                 }
                 .padding(.vertical)
-                .padding(.bottom, 80)
+                .padding(.bottom, isIPad ? 20 : 80)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle("Reports")

@@ -14,11 +14,16 @@ struct HomeTabView: View {
     @Binding var selectedTab: Int
 
     @State private var showCreateSprint = false
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 20) {
+                VStack(spacing: isIPad ? 24 : 20) {
                     // MARK: - Active Sprint Card
                     if let activeSprint = project.activeSprint,
                         project.sprints.contains(where: { $0.id == activeSprint.id })
@@ -38,8 +43,8 @@ struct HomeTabView: View {
                     SprintsCompactView(
                         project: $project, viewModel: viewModel, selectedTab: $selectedTab)
                 }
-                .padding()
-                .padding(.bottom, 80)
+                .padding(isIPad ? 24 : 16)
+                .padding(.bottom, isIPad ? 20 : 80)
             }
             .background(Color(.systemGroupedBackground))
             .navigationTitle(project.name)
