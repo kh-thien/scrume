@@ -328,28 +328,3 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-
-## 👨‍💻 Author
-
-**Khac Thien Nguyen (NEIHT)**
-
-- GitHub: [@phankhacthiennguyen](https://github.com/phankhacthiennguyen)
-
----
-
-## 🙏 Acknowledgments
-
-- Apple's [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)
-- [Scrum Guide](https://scrumguides.org/) for Agile methodology reference
-- SwiftUI community for inspiration
-
----
-
-<p align="center">
-  Made with ❤️ using SwiftUI
-</p>
