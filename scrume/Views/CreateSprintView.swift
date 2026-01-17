@@ -123,6 +123,14 @@ struct CreateSprintView: View {
         if startNow {
             sprint.startDate = Date()
             sprint.endDate = endDate
+            
+            // Deactivate any currently active sprint (Scrum: only 1 active sprint at a time)
+            for index in project.sprints.indices {
+                if project.sprints[index].status == .active {
+                    project.sprints[index].status = .completed
+                    project.sprints[index].endDate = Date()
+                }
+            }
         }
 
         // Move selected stories from backlog to sprint

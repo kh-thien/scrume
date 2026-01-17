@@ -363,6 +363,14 @@ struct SprintDetailView: View {
     // MARK: - Actions
 
     private func startSprint() {
+        // Deactivate any currently active sprint first (Scrum: only 1 active sprint)
+        for index in project.sprints.indices {
+            if project.sprints[index].status == .active && project.sprints[index].id != sprint.id {
+                project.sprints[index].status = .completed
+                project.sprints[index].endDate = Date()
+            }
+        }
+        
         sprint.status = .active
         sprint.startDate = Date()
         sprint.endDate = Calendar.current.date(
