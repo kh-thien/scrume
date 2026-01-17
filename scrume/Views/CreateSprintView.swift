@@ -16,6 +16,12 @@ struct CreateSprintView: View {
     @State private var name = ""
     @State private var goal = ""
     @State private var startNow = false
+    @State private var showActiveSprintWarning = false
+
+    // Check if there's an active sprint
+    private var currentActiveSprint: Sprint? {
+        project.sprints.first { $0.status == .active }
+    }
 
     var body: some View {
         NavigationStack {
@@ -34,6 +40,17 @@ struct CreateSprintView: View {
                     Toggle("Start Now", isOn: $startNow)
 
                     if startNow {
+                        // Warning if there's an active sprint
+                        if let activeSprint = currentActiveSprint {
+                            HStack(spacing: 8) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundStyle(.orange)
+                                Text("\"\(activeSprint.name)\" will be completed")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+
                         HStack {
                             Text("Duration")
                             Spacer()
@@ -54,9 +71,15 @@ struct CreateSprintView: View {
                     Text("Schedule")
                 } footer: {
                     if startNow {
-                        Text(
-                            "Sprint will end after \(project.sprintDurationWeeks) week\(project.sprintDurationWeeks > 1 ? "s" : "")"
-                        )
+                        if currentActiveSprint != nil {
+                            Text(
+                                "⚠️ Starting this sprint will automatically complete the current active sprint."
+                            )
+                        } else {
+                            Text(
+                                "Sprint will end after \(project.sprintDurationWeeks) week\(project.sprintDurationWeeks > 1 ? "s" : "")"
+                            )
+                        }
                     }
                 }
 
@@ -89,9 +112,25 @@ struct CreateSprintView: View {
 
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Create") {
-                        createSprint()
+                        if startNow && currentActiveSprint != nil {
+                            showActiveSprintWarning = true
+                        } else {
+                            createSprint()
+                        }
                     }
                     .disabled(name.trimmingCharacters(in: .whitespaces).isEmpty)
+                }
+            }
+            .alert("Complete Active Sprint?", isPresented: $showActiveSprintWarning) {
+                Button("Cancel", role: .cancel) {}
+                Button("Complete & Start", role: .destructive) {
+                    createSprint()
+                }
+            } message: {
+                if let activeSprint = currentActiveSprint {
+                    Text(
+                        "\"\(activeSprint.name)\" is currently active with \(activeSprint.stories.count) stories (\(activeSprint.doneStories.count) done).\n\nStarting \"\(name)\" will mark it as Completed."
+                    )
                 }
             }
         }
@@ -123,7 +162,7 @@ struct CreateSprintView: View {
         if startNow {
             sprint.startDate = Date()
             sprint.endDate = endDate
-            
+
             // Deactivate any currently active sprint (Scrum: only 1 active sprint at a time)
             for index in project.sprints.indices {
                 if project.sprints[index].status == .active {

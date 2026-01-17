@@ -370,7 +370,7 @@ struct SprintDetailView: View {
                 project.sprints[index].endDate = Date()
             }
         }
-        
+
         sprint.status = .active
         sprint.startDate = Date()
         sprint.endDate = Calendar.current.date(
